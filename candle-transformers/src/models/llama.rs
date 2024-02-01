@@ -1,5 +1,5 @@
 use super::with_tracing::{linear_no_bias as linear, Linear};
-use candle::{DType, Device, IndexOp, Result, Tensor, D};
+use candle::{DType, Device, Result, Tensor, D};
 use candle_nn::{embedding, Embedding, Module, VarBuilder};
 use serde::Deserialize;
 use std::collections::HashMap;
@@ -392,13 +392,13 @@ pub struct Llama {
 
 impl Llama {
     pub fn forward(&self, x: &Tensor, index_pos: usize) -> Result<Tensor> {
-        let (_b_sz, seq_len) = x.dims2()?;
+        let (_b_sz, _) = x.dims2()?;
         let mut x = self.wte.forward(x)?;
         for (block_idx, block) in self.blocks.iter().enumerate() {
             x = block.forward(&x, index_pos, block_idx)?;
         }
         let x = self.ln_f.forward(&x)?;
-        let x = x.i((.., seq_len - 1, ..))?;
+        // let x = x.i((.., .., ..))?;
         let logits = self.lm_head.forward(&x)?;
         logits.to_dtype(DType::F32)
     }

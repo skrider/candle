@@ -15,7 +15,7 @@ extern crate intel_mkl_src;
 use anyhow::{bail, Error as E, Result};
 use clap::{Parser, ValueEnum};
 
-use candle::{DType, Tensor};
+use candle::{DType, IndexOp, Tensor};
 use candle_nn::VarBuilder;
 use candle_transformers::generation::LogitsProcessor;
 use hf_hub::{api::sync::Api, Repo, RepoType};
@@ -173,6 +173,7 @@ fn main() -> Result<()> {
         let ctxt = &tokens[tokens.len().saturating_sub(context_size)..];
         let input = Tensor::new(ctxt, &device)?.unsqueeze(0)?;
         let logits = llama.forward(&input, context_index)?;
+        let logits = logits.i((.., context_index, ..))?;
         let logits = logits.squeeze(0)?;
         let logits = if args.repeat_penalty == 1. {
             logits
